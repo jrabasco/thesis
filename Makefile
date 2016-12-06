@@ -12,3 +12,6 @@ clean:
 	rm -f head/*.aux head/*.log
 	rm -f main/*.aux main/*.log
 	rm -f tail/*.aux tail/*.log
+
+view: clean pdf
+	zathura my_thesis.pdf
