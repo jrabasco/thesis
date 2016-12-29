@@ -1,9 +1,13 @@
 \chapter{Architecture}
-\section{A proxy to face the world}
-\subsection{Privacy and security}
+This chapter discusses the changes made to the internal architecture of the application. While most of those changes were motivated by some technical need or issue, we also made changes so that it is possible to use a properly secured connection which helps us further protect the privacy of our users and the security of their data. The details about those change are explained in details in section \ref{sec:proxy} and in particular the subsection \ref{subsec:privacy} is interesting in explaining what was wrong and what is now better.
+\section{Previous architecture}
+\section{A proxy to face the world}\label{sec:proxy}
+In the previous iteration, the application used a ...(simple proxy? no proxy? citation + information needed)... . While this is a good way to start to develop, but we ended up needing more. One of the need was to expose the logs to the administrators only in a easily readable manner. We ended up having our logs sent to an elastic search container and those exposed and searched through the kibana (ref needed) interface (see \ref{sec:logging}). This means that we needs the proxy to redirect to this interface based on the route accessed by the user and this also means that the proxy has to have a way to authenticate the user accessing this route. As stated before, having a good proxy helps us providing more security by having an SSL setup in the proxy.
+\subsection{Privacy and security}\label{subsec:privacy}
 We are asking our users to share private and potentially intimate information with us. We have to take extreme care when manipulating the data we get and when serving the questions to the user. The project architecture was improved so that the different containers do not communicate with the outside world directly but instead goes through an NginX\footnote{\url{https://www.nginx.com/}} proxy. This helped us with the setup of a secure communication between the application and our servers using the latest and most up to date security protocols\footnote{\url{https://www.ssllabs.com/ssltest/analyze.html?d=reminisce.me&latest}}. We also need the users to trust that we are using a secure connection so we obtained a security certificate issued by Let's Encrypt\footnote{\url{https://letsencrypt.org/}} which will be recognized by any modern browser (screenshot of the green lock?) as safe.\\
 The above-mentioned proxy server and the ability we get from Facebook to identify the application's administrators helped us hide some parts of the application to the general public. In particular, only the administrators can access the newly-created log page and the feed back page (both potentially contain private information).
-\section{Monitoring and logging}
+\section{Monitoring and logging}\label{sec:logging}
+\subsection{Authenticating the user}
 \section{Stats module}
 
 1. Simplification to make it easier to use and extend
