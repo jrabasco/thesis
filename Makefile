@@ -16,7 +16,9 @@ clean:
 	rm -f head/*.aux head/*.log
 	rm -f main/*.aux main/*.log
 	rm -f tail/*.aux tail/*.log
+ifeq ($(wildcard my_thesis.pdf),)
+else
 	rm my_thesis.pdf
-
+endif 
 view: all
 	zathura my_thesis.pdf
