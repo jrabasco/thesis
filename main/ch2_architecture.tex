@@ -7,7 +7,7 @@ In the previous iteration, the application used a ...(simple proxy? no proxy? ci
 We are asking our users to share private and potentially intimate information with us. We have to take extreme care when manipulating the data we get and when serving the questions to the user. The project architecture was improved so that the different containers do not communicate with the outside world directly but instead goes through an NginX\footnote{\url{https://www.nginx.com/}} proxy. This helped us with the setup of a secure communication between the application and our servers using the latest and most up to date security protocols\footnote{\url{https://www.ssllabs.com/ssltest/analyze.html?d=reminisce.me&latest}}. We also need the users to trust that we are using a secure connection so we obtained a security certificate issued by Let's Encrypt\footnote{\url{https://letsencrypt.org/}} which will be recognized by any modern browser (screenshot of the green lock?) as safe.\\
 The above-mentioned proxy server and the ability we get from Facebook to identify the application's administrators helped us hide some parts of the application to the general public. In particular, only the administrators can access the newly-created log page and the feed back page (both potentially contain private information).
 \section{Monitoring and logging}\label{sec:logging}
-\subsection{Authenticating the user}
+\subsection{Finding the user}
 \section{Stats module}
 
 1. Simplification to make it easier to use and extend
