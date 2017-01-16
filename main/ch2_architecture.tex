@@ -1,8 +1,10 @@
 \chapter{Architecture}
 This chapter discusses the changes made to the internal architecture of the application. While most of those changes were motivated by some technical need or issue, we also made changes so that it is possible to use a properly secured connection which helps us further protect the privacy of our users and the security of their data. The details about those change are explained in details in section \ref{sec:proxy} and in particular the subsection \ref{subsec:privacy} is aimed at explaining the implications and benefits on our users' privacy and security.
 \section{Previous architecture}
-The previous architecture has at its core goal to isolate as much as possible the processes handling our users' private data from the outside world. As can be seen in figure \ref{fig:fetchArch} and figure \ref{fig:gameCreationArch} the Game Creator (also sometimes called Game Generator) process does not accept request from the outside world and everything goes through the reminisceme component. This component itself accepts requests from the outside world but never handles the data we get from Facebook, it can only get the created game boards from the Game Creator, never the actual piece of data used to generate it.\\
-While this architectures is really good at preventing private data from leaking to a potential malicious user (thanks to the fact that we authentify our user through Facebook authentification), it does not help the user to verify the identity of the server. This setup is quite vulnerable to what is called a Man-in-the-middle attack\cite{mitm} and the communication is not encrypted. In short, a malicious person could (with more or less ease) intercept messages and read the generated questions (which contain some of the user's Facebook data). A simple solution to this is the use of SSL\cite{whyssl}\cite{ssl} certificates. Those certificates enable trust (it gives a way for the user's browser to check our identity through a Certificate Authority\cite{ca}, we used Let's Encrypt\cite{letsencrypt} because it is free, easy to use and trusted.).
+The previous architecture has at its core goal to isolate as much as possible the processes handling our users' private data from the outside world. As can be seen in figure \ref{fig:fetchArch} and figure \ref{fig:gameCreationArch} the Game Creator (also sometimes called Game Generator) process does not accept request from the outside world and everything goes through the Reminisce.me component. This component itself accepts requests from the outside world but never handles the data we get from Facebook, it can only get the created game boards from the Game Creator, never the actual piece of data used to generate it.\\
+While this architectures is really good at preventing private data from leaking to a potential malicious user (thanks to the fact that we authenticate our users through Facebook authentification), it does not help the user to verify the identity of the server. This setup is quite vulnerable to what is called a Man-in-the-middle attack\cite{mitm} and the communication is not encrypted. In short, a malicious person could (with more or less ease) intercept messages and read the generated questions (which contain some of the user's Facebook data) by pretending to be the server and simply relaying the messages.
+A simple solution to this is the use of SSL\cite{whyssl}.\blockquote{Transport Layer Security (TLS) and its predecessor, Secure Sockets Layer (SSL), both frequently referred to as "SSL", are cryptographic protocols that provide communications security over a computer network.\cite{ssl}}
+It works by generating a proof of identity (certificate) via a Certificate Authority\cite{ca} (CA) and sending it to the user when establishing a connection. The browser can then verify the validity of the certificate with the help of the CA. All of these operations are transparent to the end user and come only at a small cost of performance which is unnoticeable for a human user. More about the benefits on privacy is said in section \ref{subsec:privacy}. As a Certificate Authority we chose to use Let's Encrypt\cite{letsencrypt} which is a free certificate authority supported by a lot of renowned corporations.
 \begin{figure}[!h]
 \center
 {\includegraphics[width=3.5in]{images/fetch_arch.png}}
@@ -16,9 +18,10 @@ While this architectures is really good at preventing private data from leaking 
 \label{fig:gameCreationArch}
 \end{figure}
 \section{A proxy to face the world}\label{sec:proxy}
-Using SSL certificates properly implies doing a lot of sometimes complicated cryptographic work. It is never advised try and implement this kind of protocol by oneself. In fact it is one of the most common security mistake. This is the first reason we needed to introduce a proxy\cite{reverseproxy}. It is a piece of software that will serve as a single point of communication between the "outside world" and our application. Most of the modern proxies are simply able to use the SSL protocol and serve the requests to our application in a transparent way. Which means that, by simply adding a proxy in font of our application we can add a lot of privacy protection and trust (more in subsection \ref{subsec:privacy}).\\
-A second reason we were interested in having a proxy in place is that we wanted to have some administrative tools available easily from the same server as the application (in particular we wanted to be able to easily consult the logs (\ref{sec:logging}) generated by the application if anything went wrong) and a proxy's main function is actually to serve information from multiple processes on a single access point.\\
-Finally it can also be seen as "doubling" the isolation of the Game Creator by putting an other layer of protection on top of the previous one, while not necessarily mandatory, it is always a good idea to rely on tested and widespread software rather than our own only when it comes to security.\\
+As mentioned earlier, it was crucial for the privacy of our users that we start using some cryptographic protection. Using SSL certificates properly implies doing a lot of sometimes complicated cryptographic work. It is never advised to try and implement this kind of protocol by oneself. In fact it is one of the most common security mistakes\cite{selfcrypto}. This is the first reason we needed to introduce a proxy\cite{reverseproxy}. It is a piece of software that will serve as a single point of communication between the "outside world" and our application. Most of the modern proxies are simply able to use the SSL protocol and serve the requests to our application in a transparent way. Which means that, by simply adding a proxy in font of our application we can add a lot of privacy protection and trust (more in subsection \ref{subsec:privacy}).\\
+An other reason we were interested in having a proxy in place is that we wanted to have some administrative tools available easily from the same server as the application (in particular we wanted to be able to easily consult the logs (\ref{sec:logging}) generated by the application if anything went wrong) and a proxy's main function is actually to serve information from multiple processes on a single access point.\\
+It can also be seen as "doubling" the isolation of the Game Creator by putting an other layer of protection on top of the previous one, while not necessarily mandatory, it is always a good idea to rely on tested and widespread software rather than our own only when it comes to security.\\
+Finally, a proxy would facilitate the transition to a model with multiple machines instead of one if we would need to have more computing power. This is because the modern proxies are equipped with all the necessary tools to perform load-balancing (``load balancing improves the distribution of workloads across multiple computing resources'' \cite{loadbalancing}).
 We decided to use NginX\cite{nginx} for the above-mentioned reasons, a lot of people use it (which also means that it is easier to find information about it online), it has been proven reliable and powerful and it supports a lot of useful features such as preventing user to access the server without using the SSL protocol (everything is handled in a transparent way and the user never has to think about it).
 \subsection{Privacy and security}\label{subsec:privacy}
 To understand the benefits of using a proper SSL certificate and protocol, it is important to understand a bit more about how it works. As mentioned before, it is used mainly to allow the user to identify the server or website as being who it is pretending to be and to allow encryption of the exchanged messages. Any well-configured server using SSL will be able to show a certificate to the user's browser which the latter can verify with the Certificate Authority which produced it. The Certificate Authority will make sure that:
@@ -45,15 +48,34 @@ We wanted to be able to easily answer questions such as "How often does this pro
 \caption{Logging architecture}
 \label{fig:loggingArch}
 \end{figure}
-\section{Stats module}
+
 \begin{figure}
 \centering
 {\includegraphics[width=6in]{images/kibana.png}}
 \caption{Kibana Logs Interface}
 \label{fig:kibana}
 \end{figure}
+
+
 \section{Stats module}
 
 1. Simplification to make it easier to use and extend
 2. Added time spent
 3. Display to the user to make it more enjoyable.
+LOGGING IS THE SAME BWAAAAA
+
+\section{Summary}
+The final architecture is then composed of the following components (see figure \ref{fig:architecture}):
+\begin{itemize}
+	\item \textbf{NginX proxy} in front of everything, responsible for dispatching the requests
+	\item \textbf{Reminisce.me} the application itself, serving the user interface
+	\item \textbf{Game Creator} the module responsible for serving questions to the application
+	\item \textbf{Stats} the statistics module, compiling data about the success rate of users
+	\item \textbf{Kibana, ElasticSearch, Logstash} the logging stack which helps monitoring everything
+\end{itemize}
+\begin{figure}
+\centering
+{\includegraphics[width=6in]{images/architecture.png}}
+\caption{The whole architecture}
+\label{fig:architecture}
+\end{figure}
