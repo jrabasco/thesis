@@ -1,4 +1,26 @@
 \appendix
 \chapter{An appendix}
 
-\lipsum[1]
+\section{Authenticated access to logs}\label{appendix:cookies}
+The logs are served by Kibana, which is accessible on port 8080 of the server. The requests are passed to Kibana by NginX. The main problem to solve here is that the Meteor application is the part of the system which is handling the users and therefore it is the only part of the code where we can reliably identify a user and know if it that user is a developer or not. On the other hand, Kibana is completely separated from the Meteor application so we needed a way for NginX to get the information to know whether or not to let the user access Kibana.\\
+Other solution have been thought about such as make Meteor act as a proxy itself to make it defer some requests to Kibana but it was proved near to impossible to do with the current setup of the application (there are some routing modules in Meteor which can help with this but it proved really hard and maybe impossible to do properly). Another solution could be to setup users in Kibana but it would make our work harder as we would need to manage users in two places: Facebook and Kibana.\\
+The final solution which was decided on then is the use of cookies. The problem now is that Meteor is not built to use cookies, in fact meteor does not support setting cookies on the server side. We have to generate the cookies on the client side using standard Javascript. This is a big problem because we cannot use HttpOnly cookies\cite{httponly}, which makes the cookies weaker. Fortunately, we could combine Meteor's methods with cookies to make a stolen cookie unusable.\\
+``Methods are Meteor’s remote procedure call (RPC) system, used to save user input events and data that come from the client.'' \cite{methods} With this tool we can have the client notify the server when a new cookie is being created on the client side, it can then verify that the user triggering the cookie creation is a developer of the application and store a valid token in the database. A token is an object containing a token ID (random 80 characters long string, sent back as a response from the server) and an expiration time (1 hour in the future). Then the cookie simply contains the token id. The random ID is generated using Meteor's \texttt{Random.secret} method which usage is advised ``for security-critical secrets that are intended for machine, rather than human, consumption''\cite{meteorrandom}.\\
+When verifying the cookie's validity we get a token with an ID equal to the ID contained in the cookie from the database and then check if the expiration is in the future. As inserting a token in the database only happens server side and the server only does it if the user is a developer, it makes it impossible to use forged cookies because there would not be a corresponding valid token in the database. The options on the cookie are the following:
+\begin{itemize}
+	\item \texttt{secure} only in production (ensures that the cookie is only used over SSL, but cannot be done in a development environment as we do not have certificates in development)
+	\item \texttt{path=/} cookie validity scope, as the logs are simply located at the root on a different port, this is the right value
+	\item \texttt{max-age=3600} one hour of max age
+	\item \texttt{expires=XXX} where \texttt{XXX} is a UTC date one hour in the future
+\end{itemize}
+When a cookie is sent back by the server, the client side code just redirects the user to the port 8080 which will open the logs.\\
+Now we only need to make sure that NginX has access to the database and queries it to check for the validity of the cookie. By default NginX cannot do such operations as doing authentication based on the value read in a database. However it can defer the authentication to an external service, which means we could simply run a micro server (written in any language) in the container which would just verify the cookie's existence and validity. To make this work, NginX simply passes the exact same request it was sent to the specified authentication service. This service has to answer with a \texttt{200 OK} status code if the proxy must authorize it and a \texttt{403 Forbidden} return code otherwise.We chose to use Python 3 to write this service as it has a good support of MongoDB and writing a simple HTTP server in this language is a matter of a couple of lines of code.\\
+The full authentication process is the following:
+\begin{enumerate}
+	\item The client uses a Meteor method to request a token ID
+	\item The server checks if the connected user is a developer and if so stores a token in the database and sends back the token ID to the client
+	\item If the server answers with a non empty token ID, the client stores it as a cookie and redirects the client on the 8080 port
+	\item Upon receiving a request on port 8080, the NginX proxy passes the request to a python micro service
+	\item The micro service checks if a corresponding token exists and if its expiration date is in the future, if so it responds with \texttt{200 OK} otherwise with \texttt{403 Forbidden}.
+	\item If the answer is \texttt{200 OK}, NginX passes the request to Kibana, otherwise it forwards the \texttt{403 Forbidden} to the requester.
+\end{enumerate}

@@ -41,7 +41,9 @@ If those conditions are met, the browser will be able to trust the website and t
 When developing and maintaining an application, one of the key feature required to be able to find, understand and eliminate defect, is the ability to understand the failure. One need to be able to see where the failure happened, what the state of the system was and if possible the cause of the failure. In order to achieve this, a well thought logging system is mandatory. This means that the application must produce logs that are readable and explanatory, they must provide as much information as possible so that the cause of failure can be identified rapidly. On top of this, one need to be able to search through the logs in a convenient way, which is not a given because with a large number of user the log can start to grow a lot.\\
 One of the common usage of the log is to find why one user encountered the problem which was reported, when this is the case we need to be able to find all actions performed by the application for that user. With this in mind, we made sure that whenever possible an identifier for the user who triggered the action is added to the log.
 \subsection{Indexing the log and looking at it}
-We wanted to be able to easily answer questions such as "How often does this problem happen?". To be able to do this in the easiest way, we have to provide a search interface which provides tools for searching and analyzing the logs. Fortunately, this is a common issue when building an application so solutions already exist. We decided to use ElasticSearch\cite{elasticsearch} and Logstash\cite{logstash} to index the logs. As shown on figure \ref{fig:loggingArch}, the Game Creator and the application both write their logs to a file, Logstash then reads those files and feeds them into the ElasticSearch database which then makes them easily searchable (by using the Elastic Search Query DSL \cite{querydsl}). Finally we use Kibana\cite{kibana} to have a nice graphical interface to access the indexed logs. It provides ways to formulate queries and generate graphs which can help monitor certain events such as the number of detected failures. Figure \ref{fig:kibana} shows an example of the graphical interface Kibana provides. It is worth noting that access to this graphical interface is protected by an authentication scheme based on session cookies (SEE APPENDIX).%TODO: APPENDIX ON COOKIES FOR LOGS
+We wanted to be able to easily answer questions such as "How often does this problem happen?". To be able to do this in the easiest way, we have to provide a search interface which provides tools for searching and analyzing the logs. Fortunately, this is a common issue when building an application so solutions already exist. We decided to use ElasticSearch\cite{elasticsearch} and Logstash\cite{logstash} to index the logs. As shown on figure \ref{fig:loggingArch}, the Game Creator and the application both write their logs to a file, Logstash then reads those files and feeds them into the ElasticSearch database which then makes them easily searchable (by using the Elastic Search Query DSL \cite{querydsl}). Finally we use Kibana\cite{kibana} to have a nice graphical interface to access the indexed logs. It provides ways to formulate queries and generate graphs which can help monitor certain events such as the number of detected failures. Figure \ref{fig:kibana} shows an example of the graphical interface Kibana provides.
+\section{Protecting the logs}
+Having the logs easily accessible from the website is a really useful feature and it can prove really helpful. But it is also a privacy risk. We want the logs to be as informative as possible and therefore they may contain pieces of information we do not want to be leaked to the general public. For that reason it is necessary to use some sort of authentication scheme. To make it transparent and avoid having to handle a user system (or have a password that we have to change whenever anyone leaves the team) we simply decided to use the information we get from Facebook, which contains the role of a user in the application (simple user or developer). We then use HTTP cookies to tell NginX that this user is trusted. \blockquote{An HTTP cookie (also called web cookie, Internet cookie, browser cookie or simply cookie) is a small piece of data sent from a website and stored on the user's computer by the user's web browser while the user is browsing.}\cite{cookie} After being stored on the user's web browser, these cookies will be sent with all the requests made to the website and the proxy can then read them and make sure the user is an authorized user. We made sure that they are encrypted so that no one can steal them and use them to look at the logs. Appendix \ref{appendix:cookies} explains in more details how this was achieved.
 \begin{figure}
 \centering
 {\includegraphics[width=3.5in]{images/logging_arch.png}}
@@ -58,11 +60,27 @@ We wanted to be able to easily answer questions such as "How often does this pro
 
 
 \section{Stats module}
-
-1. Simplification to make it easier to use and extend
-2. Added time spent
-3. Display to the user to make it more enjoyable.
-LOGGING IS THE SAME BWAAAAA
+The statistics module developed previously helped a lot in collecting data about the success rate of the user. However it had a major design flow which made the preprocessing step a potential stability threat. In short, the older the inserted game was, the more daily statistics had to be generated which could lead to resource starvation rather quickly (which simply means the module would crash or potentially worse, the whole server could stop). While all this preprocessing seemed like a good idea, we realized it was not necessary and decided to help with the simplification of the module's architecture.
+\subsection{Collections and features}
+The \textbf{cacheCollection} was replaced by a \textbf{statsCollection} which simply contains, for each day we have data about, the following information (called a 'daily statistic' later):
+\begin{enumerate}
+	\item \textbf{date} that day's date
+	\item \textbf{amount} the number of games played
+	\item \textbf{win} the number of wins
+	\item \textbf{tie} the number of ties
+	\item \textbf{loss} the number of losses
+	\item \textbf{question breakdown} details for each question type containing the following:
+	\begin{enumerate}
+		\item \textbf{amount} number of those questions
+		\item \textbf{correct} number of correct answer
+		\item \textbf{wrong} number of wrong answers
+		\item \textbf{avoid} number of avoided questions (non answered and not blocked by the other player)
+		\item \textbf{time spent} total time spent on this type of question (in milliseconds)
+	\end{enumerate}
+\end{enumerate}
+Aggregating by weeks months or years is then only a matter of performing some sums and can be done by the person requesting the data. If those aggregates were to become used a lot we could simply add their computation back into the new simpler architecture. The reason for their removal is that it was easier to remove them to sanitize the design of this module and then add them back into it\\
+Obtaining data from the module is done in the same way as before: by issuing an HTTP GET request to the module. The parameters of the request however have changed. We only need to specify a starting and ending day and a limit. The module will then answer with a daily statistic for each day in the interval for which we have information (but not a larger number of them than the specified limit). If no date is provided for the start date we simply use the beginning of time and if no end date is specified we use today as an end date. The limit parameter was introduced to be able to request statistics about the last $n$ days a user used the application instead of using dates.\\
+This modules uses logging the same way the Game Creator module does: it writes to a file which is then collected by Logstash.
 
 \section{Summary}
 The final architecture is then composed of the following components (see figure \ref{fig:architecture}):
