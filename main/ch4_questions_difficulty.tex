@@ -18,7 +18,7 @@ In our application, we do not know the number of clusters in advance, it is some
 \begin{figure}
 \centering
 {\includegraphics[width=6in]{images/cluster_comparison.png}}
-\caption{Comparison of multiple clustering techniques \cite{apachecluster}}
+\caption{Comparison of multiple clustering techniques from the Apache maths Commons documentation\cite{apachecluster}}
 \label{fig:clustComp}
 \end{figure}
 
@@ -44,7 +44,7 @@ Figure \ref{fig:reachExample} illustrates those definitions.
 \begin{figure}
 \centering
 {\includegraphics[width=3.5in]{images/reach_example.png}}
-\caption{This figure taken from \cite{dbscan} shows an example where $minPts=4$. $\epsilon$ is represented by the circles. The points in red are \emph{core points}, the ones in yellow are \emph{reachable} and the one in blue is an outlier. The cluster would be comprised of points in red and yellow.}
+\caption{This figure taken from the Wikipedia article on DBSCAN \cite{dbscan} shows an example where $minPts=4$. $\epsilon$ is represented by the circles. The points in red are \emph{core points}, the ones in yellow are \emph{reachable} and the one in blue is an outlier. The cluster would be comprised of points in red and yellow.}
 \label{fig:reachExample}
 \end{figure}
 
@@ -62,15 +62,61 @@ Let's first define the $\epsilon$-\emph{neighborhood} of a point as the set of p
 
 At the end, all the points which are not in any cluster are \emph{outliers}.
 
-\subsection{Parameters selection}
+\subsection{Parameters selection}\label{subsec:paramselect}
 
-\section{Multiple Choice Questions}
-Use of relationship between the users.
-\section{Ordering Questions}
-Reactions: standard deviation from the mean.
-Pages: clustering: in same cluster -> hard, two clusters -> easy, cluster + non-cluster -> medium
-\section{Geolocation Questions}
-Cluster: in a large cluster -> easy, outside of cluster -> hard, in medium sized cluster -> medium
-\section{Timeline questions}
-Same as geolocation.
+As for all clustering algorithm, we must select the input parameters carefully as they have a big impact on the algorithms behavior and results. In the case of DBSCAN, the two parameters are $\epsilon$ and $minPts$. The selection of those parameters is not an exact science and depends on the problem to solve. In our case, we are still in the really early stage of out understanding of the problem (our clusters relate to questions difficulty which we do not fully master yet), we needed some basic parameter to start experimenting with.\\
+For $minPts$, it is generally advised to use at least the dimension of the values plus 1 but no less than 3\cite{dbscan}. In out case we will be clustering geolocation data (dimension 2), temporal data (dimension 1) or simple numerical values (dimension 1) so a cluster size of 3 seemed to fit the purpose well (it is also the number of elements we need in the ordering questions).\\
+For $\epsilon$, it depends a lot on the kind of data we are clustering. The general advice is that ``The value for $\epsilon$ can then be chosen by using a k-distances graph, plotting the distance to the $k = minPts$ nearest neighbor. Good values of $\epsilon$ are where this plot shows a strong bend.''\cite{dbscan} This simply means that we can use a data sample, for each point compute the maximum distance to its three closest neighbors and plot those distance. Where the plot shows a strong bend should be the right value for $\epsilon$. The value chosen for every type of data is specified in each section.
+
+\section{Questions creation with difficulty}
+In this section we will discuss the process of creating questions with a certain difficulty. As mentioned before, there are two aspect to the problem: the items selection and the generation of the question itself. The selection part consists on assigning a difficulty score for each type of question to each item, so that when generating a question one can know which items to use. Those scores were chosen so that they are between 0 and 1 for any type of question so that we have a common base line. The generation part simply consists of the logic we use to generate the question once we selected the items.
+\subsection{Multiple Choice Questions}
+We have two kind of multiple choice questions, the ones about posts and the ones about pages. The ones about posts always ask who of the displayed people reacted or commented on a post, therefore the difficulty of these questions is directly linked to the relation with those people. The questions about pages ask which page was liked, the intuition we used here is that pages with the least likes are the most recognizable because they are often related to a really particular interest of the user that is not usual and they are aware of it. Also showing choices that have not a lot of likes makes it easy for the user to discard them as not liked because they have a high chance to be subjects the player do not even know about.
+\subsubsection{Items selection}
+For the questions about the posts, we first counted how many times each person reacted on one of the user's posts. Then each post's difficulty was decided based on how frequent the people who reacted on that post reacted to the user's posts over all. The less they did, the higher the difficulty score. The reason behind this scoring logic is that it seems that some posts get reactions from people the user does not know (friends of friends for instance) and it makes the question hard when the right answer is someone the player is not even sure they know at all. More precisely, let $max$ be the total number of reactions for the user who made the most reactions over all and let $maxForPost$ be the total number of reactions for the user with the most overall reactions among the users who reacted on the considered post. Then the difficulty score $diffScore$ is : $$diffScore = 1 - \frac{maxForPost}{max}$$\\
+For the questions about the pages, we considered the logarithm of the number of likes as the distribution of the number of likes is a power law distribution (the rank is proportional to the logarithm of the number of likes). Therefore, as we considered highly liked pages as being the hardest, we decided to assign the score as follows: let $max$ be the number of likes of the pages with the most number of likes which has been liked by this user and let $pageLikes$ be the number of likes for the considered page, then the difficulty score $diffScore$ is: $$diffScore = \frac{\log(pageLikes)}{\log(max)}$$
+\subsubsection{Question generation}
+In the question generation process, the choice to make is the proposed alternatives. For the posts questions, the harder the question the less reactions will the proposed alternatives have. For the pages questions, the harder the question, the most likes will the proposed alternatives have.
+\subsection{Timeline questions}
+The difficulty of such a question resides in the period in which a post is made and the precision asked. The heuristic we used for this question is that if a post comes from a period of very dense activity it is not a particularly memorable one so it would generate a hard question. If it comes from a period of non dense activity it must be a memorable one due to its isolation and therefore it will generate an easy question.
+\subsubsection{Scoring the items}
+To assign a score we decided to use DBSCAN in order to know about the periods of dense activity. A cluster represent such a period and therefore an item which is in a cluster will get score 1.0 and an item which is not in a cluster will get score 0.5.\\
+As for the parameters used for the clustering, we decided to use 3 for $minPts$ for the reasons mentioned in section \ref{subsec:paramselect}. The choice of $\epsilon$ is based on a 3-distances graph we made using the data from a user who had a lot of posts. The distances are computed in milliseconds. Figure \ref{fig:postTime} shows the resulting graph. The value chosen for $\epsilon$ was 1010391000 milliseconds which is approximately 11.69 days.
+\begin{figure}
+\centering
+{\includegraphics[width=3.5in]{images/post_time_knn.pdf}}
+\caption{3-distances graph for post time}
+\label{fig:postTime}
+\end{figure}
+\subsubsection{Generating the question}
+The parameter we can choose when generating a question is the length of the time periods proposed to the user. Without difficulty this length is chosen to be proportional to how long in the past the event happened. When incorporating the difficulty we decided to reduce it based on the difficulty: the harder the question has to be the smaller the time period has to be. We still take into account the date of the event as we have to compensate for the fact that older events are harder to remember.
+
+\subsection{Geolocation Questions}
+On this type of question we have nothing to do while generating the question, the selection of an item suffices. Therefore we only need to generate a score for each item. We do it in the same way as for the timeline questions: we cluster the items, an item which is in a cluster will get score 1.0 and an item which is not in a cluster will get score 0.5. The reason for this is that clusters will represent places where the user lives, has lived or goes often so it is easy for them to locate these events as they know the area well. On the other hand the ones outside of a cluster are isolated places and the area is often not known well by the user.\\
+For the parameters we used for the DBSCAN clustering, we chose $minPts$ to be 3 for the reasons expressed in section \ref{subsec:paramselect}. We did not use a 3-distances graph for the choice of $\epsilon$ because there was no user with a satisfying amount of data. So we simply tried different values to see their effect on cluster and finally decided an $\epsilon$ of 2. This distance is a euclidean distance in the latitude and longitude space.
+\subsection{Ordering Questions}
+For the ordering questions, as for the geolocation questions, only the items picking matters as there is nothing else to decide when generating the question. There are two type of questions. The first kind is the new question about ordering reactions on a post according to their number on that post. And the second is the questions are the ones about ordering pages according to their number of likes or the time when the user liked the page.
+\subsubsection{Reactions ordering}
+In this case the difficulty of the question comes to from how different the numbers of each reaction are from one another. A good measure for this is the standard deviation, the higher the standard deviation the easiest the question will be. To make sure that this score is between 0 and 1 we first normalize the number of reactions relative to the one with the highest number of reactions, then compute the standard deviation. If we note the standard deviation of the normalized values $\sigma_n$ the difficulty score $diffScore$ will be $$diffScore = 1 - 2 \sigma_n$$ which is between 0 and one as the standard deviation of the normalized values will be between 0 and 0.5.
+\subsubsection{Ordering pages}\label{subsubsec:orderpages}
+This is an exception to the standard scheme of picking items only based on their score. The difficulty here lies in the similarity between the items, so when we want to generate a hard question we want to select similar items. To decide on the similarity of items we use DBSCAN clustering. We can generate two kind of questions, the hard ones, when the items are selected in the same cluster and the easy ones where the items are selected at random.\\
+For the DBSCAN parameters selection we decided to use 3 for $minPts$ for the reasons mentioned in section \ref{subsec:paramselect}. For the choice of $\epsilon$ we generated 3-distances graphs using the data from a user with a high number of liked pages.\\
+For page like times the distances are expressed in milliseconds. Figure \ref{fig:plikeTime} show the resulting graph, we decided to use the value 7709211000 milliseconds for $\epsilon$ which corresponds to approximately 89.22 days.\\
+Finally for page like numbers the distances expressed are the distances between the logarithms of the page likes number. As mentioned earlier the number of likes on a page is a power law distribution so using the logarithm of this number makes also sens when clustering. The resulting graph is shown on figure \ref{fig:plikesNumber}. The chosen value for $\epsilon$ is then 0.43349.
+
+\begin{figure}
+\centering
+{\includegraphics[width=3.5in]{images/page_like_time_knn.pdf}}
+\caption{3-distances graph for page like time}
+\label{fig:plikeTime}
+\end{figure}
+\begin{figure}
+\centering
+{\includegraphics[width=3.5in]{images/page_likes_number_knn.pdf}}
+\caption{3-distances graph for page likes number}
+\label{fig:plikesNumber}
+\end{figure}
+
 \section{Difficulty selection}
+The last problem to tackle is choosing the difficulty level we want the questions to be when generating a game board. Thanks to the stats module (see section \ref{sec:stats}) we have easily access to the success rate of a user on any type of question. This success rate being a number between 0 and 1.0 we decided to use this as a measure of required difficulty on any type of question. This means that in the cases where we are trying to generate a question which is not an ordering of pages (we did not compute a score for those, see section \ref{subsubsec:orderpages}) we can simply choose items which score is at least as high as the success rate. This success rate is then also used in the question generation process as a parameter.\\
+In the case of the ordering pages questions we used the following mapping: a hard question corresponds to a success rate in $]0.5, 1]$ and an easy question corresponds to a success rate in $[0, 0.5]$.

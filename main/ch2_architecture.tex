@@ -46,7 +46,7 @@ We wanted to be able to easily answer questions such as "How often does this pro
 Having the logs easily accessible from the website is a really useful feature and it can prove really helpful. But it is also a privacy risk. We want the logs to be as informative as possible and therefore they may contain pieces of information we do not want to be leaked to the general public. For that reason it is necessary to use some sort of authentication scheme. To make it transparent and avoid having to handle a user system (or have a password that we have to change whenever anyone leaves the team) we simply decided to use the information we get from Facebook, which contains the role of a user in the application (simple user or developer). We then use HTTP cookies to tell NginX that this user is trusted. \blockquote{An HTTP cookie (also called web cookie, Internet cookie, browser cookie or simply cookie) is a small piece of data sent from a website and stored on the user's computer by the user's web browser while the user is browsing.}\cite{cookie} After being stored on the user's web browser, these cookies will be sent with all the requests made to the website and the proxy can then read them and make sure the user is an authorized user. We made sure that they are encrypted so that no one can steal them and use them to look at the logs. Appendix \ref{appendix:cookies} explains in more details how this was achieved.
 \begin{figure}
 \centering
-{\includegraphics[width=3.5in]{images/logging_arch.png}}
+{\includegraphics[width=3.5in]{images/logging_arch.pdf}}
 \caption{Logging architecture}
 \label{fig:loggingArch}
 \end{figure}
@@ -59,7 +59,7 @@ Having the logs easily accessible from the website is a really useful feature an
 \end{figure}
 
 
-\section{Stats module}
+\section{Stats module}\label{sec:stats}
 The statistics module developed previously helped a lot in collecting data about the success rate of the user. However it had a major design flow which made the preprocessing step a potential stability threat. In short, the older the inserted game was, the more daily statistics had to be generated which could lead to resource starvation rather quickly (which simply means the module would crash or potentially worse, the whole server could stop). While all this preprocessing seemed like a good idea, we realized it was not necessary and decided to help with the simplification of the module's architecture.
 \subsection{Collections and features}
 The \textbf{cacheCollection} was replaced by a \textbf{statsCollection} which simply contains, for each day we have data about, the following information (called a 'daily statistic' later):

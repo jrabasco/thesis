@@ -1,7 +1,5 @@
 \appendix
-\chapter{An appendix}
-
-\section{Authenticated access to logs}\label{appendix:cookies}
+\chapter{Authenticated access to logs}\label{appendix:cookies}
 The logs are served by Kibana, which is accessible on port 8080 of the server. The requests are passed to Kibana by NginX. The main problem to solve here is that the Meteor application is the part of the system which is handling the users and therefore it is the only part of the code where we can reliably identify a user and know if it that user is a developer or not. On the other hand, Kibana is completely separated from the Meteor application so we needed a way for NginX to get the information to know whether or not to let the user access Kibana.\\
 Other solution have been thought about such as make Meteor act as a proxy itself to make it defer some requests to Kibana but it was proved near to impossible to do with the current setup of the application (there are some routing modules in Meteor which can help with this but it proved really hard and maybe impossible to do properly). Another solution could be to setup users in Kibana but it would make our work harder as we would need to manage users in two places: Facebook and Kibana.\\
 The final solution which was decided on then is the use of cookies. The problem now is that Meteor is not built to use cookies, in fact meteor does not support setting cookies on the server side. We have to generate the cookies on the client side using standard Javascript. This is a big problem because we cannot use HttpOnly cookies\cite{httponly}, which makes the cookies weaker. Fortunately, we could combine Meteor's methods with cookies to make a stolen cookie unusable.\\
