@@ -1,6 +1,6 @@
-\chapter{User Enjoyment Improvement}
+\chapter{Application Improvements}
 One of the main goals of Reminisce.me is to get people to play a lot of games in order to be able to collect a lot of information. The more a person plays and the longer they keep coming back to the game the more detailed the analysis can be. It is also important that the users enjoy the game enough for them to talk about it and attract more users. In general, we can say that this project trades enjoyment for data about autobiographical memory. For that to be possible, we need the game to be enjoyable and the player to feel comfortable while playing. A lot of measures have been been put in place to make the whole experiment as good as possible.
-\section{Mobile improvements}
+\section{Creation of the mobile application}
 Most of the people today access the internet on their mobile device more than they do on a laptop or desktop computer. In fact, the largest part of Facebook users are mobile users \cite{mobileusage}. Therefore, we can safely expect that a decent portion of our user base will be mobile users, playing while on transportation or during a break. Making the experience great for these players is then an important concern.
 \subsection{Mobile application: motivations}
 Up to now, the way to access Reminisce.me on a mobile device was through a browser on the phone. Some basic application had been tested in the past but it could not really be used as a replacement for the web application. The problems that come from using Reminisce.me on a mobile phone are the following:
@@ -10,7 +10,14 @@ Up to now, the way to access Reminisce.me on a mobile device was through a brows
 \end{enumerate}
 Building a mobile application solves those problems. With an application installed on the phone, the amount of data the user has to download to play the game is less than on a website as some data is already stored on the phone this way. We can have separate code running on the mobile for specific parts which need a different treatment so we can make all the features work on all platforms.
 \subsection{Building a mobile application with Meteor}
-Writing a mobile application is a tedious task and requires a lot of development. Fortunately, Meteor comes coupled with Cordova\cite{cordova} which makes the bold promise of enabling developers to create a native mobile application with the fewest possible changes. This works by having most of the application code running in a web view on the mobile (much like an in-application internet browser, but without an address bar) and only have specialized code when you want to use a native functionality (camera, notifications, etc.). Thus, for most of the application we only need to make sure that our design is responsive and works well on small smartphones screens. It also offers the possibility to clearly separate the code which runs on a the Cordova (mobile) platform and the one intended to run anywhere else through a simple boolean check.
+Writing a mobile application is a tedious task and requires a lot of development. Fortunately, Meteor comes coupled with Cordova\cite{cordova} which makes the bold promise of enabling developers to create a native mobile application with the fewest possible changes. This works by having most of the application code running in a web view on the mobile (much like an in-application internet browser, but without an address bar) and only have specialized code when you want to use a native functionality (camera, notifications, etc.). Thus, for most of the application we only need to make sure that our design is responsive and works well on small smartphones screens. It also offers the possibility to clearly separate the code which runs on a the Cordova (mobile) platform and the one intended to run anywhere else through a simple boolean check. Figure \ref{fig:mobscreen} shows the mobile application running on a phone.
+
+\begin{figure}
+\centering
+{\includegraphics[width=3.5in]{images/mobile_screenshot.png}}
+\caption{The mobile application}
+\label{fig:mobscreen}
+\end{figure}
 
 \subsection{Future improvements}
 We did not manage to provide an iOS version of the application and it is therefore only possible to try it on an Android phone. The first important step would be to make sure that we can provide a proper iOS version of the application before trying to improve it. Most of the work has been done and hopefully it is just a matter of doing a similar work for iOS.\\\\
