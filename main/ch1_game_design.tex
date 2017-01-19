@@ -1,7 +1,7 @@
 \chapter{Game Design}
 \section{Reminder}
 The game presents itself as a tic-tac-toe with a twist. It adds to the standard rules of tic-tac-toe by requiring that the user answers questions about themselves in order to conquer a tile. It is also possible to conquer a tile the opponent already conquered by getting a better score on that tile.\\
-The game board is comprised of 9 tiles with 3 questions each. The condition for getting a tile which nobody conquered is simply to get at least one correct answer. The questions are divided in four categories.
+The game board is comprised of 9 tiles with 3 questions each. The condition for conquering a tile which nobody conquered is simply to get at least one correct answer. The questions are divided in four categories.
 \subsection{Multiple Choice}
 In those questions, the user is asked a question an presented with 4 different possible answers. Before this iteration of the project, the possible questions were:
 \begin{itemize}
@@ -21,13 +21,13 @@ In this case, the user is asked to order some items based on some metric. The po
 	\item Order the posts according to the number of comments they received
 	\item Order the posts according to the time when you created them
 \end{itemize}
-A new type of question was then added (section \ref{subsec:newreacts}) and some of them were removed (section \ref{subsec:postorder})
+A new type of ordering question was then added (section \ref{subsec:newreacts}) and some of them were removed (section \ref{subsec:postorder})
 
 \subsection{Geolocation}
-The final type of questions asks the user where was one of their posts located.
+This final type of questions asks the user where was one of their posts located.
 
 \subsection{Notifications}
-A lot of events might happen while playing this game, especially if the user is concurrently playing many games. Also, because this game is not a real time game, it is easy to forget about it and not pay attention to it anymore. To help them keep track of what is happening and to keep them engaged in the game, we send notifications when someone plays a move or invites the user to play a new game.
+A lot of events might happen while playing this game, especially if the user is concurrently playing many games. Also, because this game is not a real time game, it is easy to forget about it and not pay attention to it anymore. To help our users keep track of what is happening and to keep them engaged in the game, we send notifications when one of their adversaries plays a move or invites them to play a new game.
 
 \section{New Data}
 As new services and new technologies enter the market of social medias, people keep changing the way they make use of said products. A lot of the platforms focus on giving more incentive to their users to expose a larger and larger part of their life on said services as it is at the core of their business to increase the usage of their product. They develop new ways for people to share their experiences and it gives social medias the ability to be a part of the everyday life of a lot of their users. Facebook is no exception to this, the more the people can share, the more they will use the platform and interact with their friends on it and the more likely they are to come back.\\To be able to exploit those resources as much as possible in Reminisce.me we must continuously be on the look for new ways we can update and refine our data model to improve our understanding of biographical memory.
