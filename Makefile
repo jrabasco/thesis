@@ -21,4 +21,4 @@ else
 	rm my_thesis.pdf
 endif 
 view: all
-	evince my_thesis.pdf
+	zathura my_thesis.pdf
